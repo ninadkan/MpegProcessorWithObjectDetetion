@@ -57,3 +57,23 @@ https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/c
   # in the next command, ensure that you've got the PAT and that is added when you configure the Login and Token.
   226  gh configure
   227  gh create-repo MpegProcessorWithObjectDetetion -d "This project shows how to process MPEG files and creates smaller files depending on the Date stamp present in  each frame"
+  # I made a mistake of not adding '.git' at the end of repository, so I had to remove the origin and then add it back again like so
+
+  234  echo "# MpegProcessorWithObjectDetetion" >> README.md
+  235  git status
+  236  git add .
+  237  git commit -m "Added README.md"
+  # stiil the error as the git remote origin is in an error
+  238  git push -u origin master
+  # Error as I cannot add as its still exists
+  242  git remote add origin git@github.com:ninadkan/MpegProcessorWithObjectDetetion.git
+  243  git remote -v
+  245  git remote remove origin
+  # There should be nothing now
+  246  git remote -v
+  247  git remote add origin git@github.com:ninadkan/MpegProcessorWithObjectDetetion.git
+  # Now the following should work
+  248  git push -u origin master
+  #And yes it does. 
+  # Not sure this is a good thing, as getting it setup from the portal allows lots of configuration options which are 
+  # not done when doing from the command line. Such as configuring the flder for python code packages
