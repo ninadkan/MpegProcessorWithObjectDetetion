@@ -15,3 +15,45 @@
 
 
 # Next copy this file to the newly created folder. 
+
+# If you need to find out how to add new SSH key, see the following
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/about-ssh
+#If you want to and might need to, its better to create a personal access token
+https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+
+# So what commands are needed to create the git repository from command line
+# move to the folder where you've added some of the files
+# you've added this Readme.txt file
+
+ 195  clear
+  196  git add .
+  197  git status
+  198  git commit -m "Added Readme.txt file"
+  199  git remote add origin git@github.com:ninadkan/MpegProcessorWithObjectDetection
+  # following fails with authentication error. 
+  201  git push -u -f origin master
+
+  # so I added SSH authentication. In Git you can use https:// API, using tokens [PAT] or using 
+  # SSH. I first enabled the SSH
+
+  202  git remote -v
+  203  ls -al ~/.ssh
+  204  cat  ~/.ssh/known_hosts 
+  205  cat  ~/.ssh/authorized_keys 
+  206  ssh-keygen
+  207  ssh-keygen -t ed25519 -C "ninad_kanthi@hotmail.com"
+  208  ls -al ~/.ssh
+  209  ssh-add ~/.ssh/id_ed25519
+  210  cat ~/.ssh/id_ed25519.pub
+  # now add what's displayed into the Github portal as one of the public keys. 
+  211  ssh -T git@github.com
+  # following still fails, because the repository does not exist
+  212  git push -u -f origin master
+  # lets create the repository, following fails because of password authentication is no longer accepted. 
+  213  curl -u 'ninadkan' https://api.github.com/user/repos -d '{"name":"MpegProessoeWithObjectDetection", "description":"This project processes MPEG files and extractes it depending on the date stamp present in each frame"}'
+  # gh is Github CLI method of creating repositories and other commands,, need tp install it 
+  218  sudo apt install gitsome
+  219  gh
+  # in the next command, ensure that you've got the PAT and that is added when you configure the Login and Token.
+  226  gh configure
+  227  gh create-repo MpegProcessorWithObjectDetetion -d "This project shows how to process MPEG files and creates smaller files depending on the Date stamp present in  each frame"
