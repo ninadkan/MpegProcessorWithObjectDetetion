@@ -155,4 +155,4 @@ cython_debug/
 **/htmlcov
 
 # PlaceHolder files when creating a folder structure
-**/placeholder.txt
+**/placeholder.txtinit_env_vars.sh
