@@ -116,3 +116,8 @@ export APP_CLIENT_KEY="cf6eS52P7w5GCCspxNu9e6JFGD5NDCyG"
 # in the python code, access the environment variable like so 
 import os
 DB_HOST = os.getenv('DB_HOST')
+
+
+# If you use https:// with git, it is easier but you have to enter your PAT everytime.
+# two options, either use SSH, using your own key, or use the 
+# HitHub CLI, and it will cache the credentials for you.

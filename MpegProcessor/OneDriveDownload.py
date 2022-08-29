@@ -10,9 +10,12 @@ import time
 from datetime import datetime
 
 
+client_id = os.getenv('CLIENTID')
+client_secret= os.getenv('CLIENTSECRET')
+
 
 URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
-client_id = "362422eb-d9d6-4245-9eca-2be5cf256450"
+
 permissions = ['files.readwrite']
 response_type = 'token'
 redirect_uri = 'http://localhost:8080/'
@@ -47,7 +50,7 @@ else:
 # Get code
 URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
 client_id = "362422eb-d9d6-4245-9eca-2be5cf256450"
-permissions = ['offline_access', 'files.readwrite', 'User.Read']
+permissions = ['files.ReadWrite.All', 'files.readwrite', 'User.Read']
 response_type = 'code'
 redirect_uri = 'http://localhost:8080/'
 scope = ''
@@ -93,7 +96,7 @@ def get_refresh_token():
         "refresh_token": refresh_token,
         "redirect_uri": redirect_uri,
         "grant_type": 'refresh_token',
-        "client_secret": 'xxxx-yyyy-zzzz',
+        "client_secret": client_secret,
     }
 
     response = requests.post(URL, data=data)
