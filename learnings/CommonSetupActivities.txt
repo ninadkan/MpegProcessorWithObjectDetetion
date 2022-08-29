@@ -19,6 +19,9 @@
 # Install Chrome on the machine once done
 # You'll remember to start the xrdp session everytime you boot the machine if the RDP session is not working. 
 
+# Installing Google Chrome
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo dpkg -i google-chrome-stable_current_amd64.deb
 
 # Next copy this file to the newly created folder. 
 
