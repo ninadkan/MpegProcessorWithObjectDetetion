@@ -90,3 +90,29 @@ git config --global --edit
   #And yes it does. 
   # Not sure this is a good thing, as getting it setup from the portal allows lots of configuration options which are 
   # not done when doing from the command line. Such as configuring the flder for python code packages
+
+
+
+  # Secrets management in Python using environment variables
+
+$ cd <project-dir>
+$ touch init_env_vars.sh
+$ chmod +x init_env_vars.sh
+$ echo "**/init_env_vars.sh" >> .gitignore
+
+
+# Script structure might look like this
+#!/bin/zsh
+export DB_HOST="localhost"
+export DB_PORT=5432
+export DB_NAME="app_db"
+export DB_USER="app_user"
+export DB_PASSWORD="123Qwerty"
+export REPORT_KEY="ZntLAWQH73EGsJQz"
+export APP_AUTH_KEY="Basic 4ctCTDK9PMd9fyQcfUPQqKtFedLVLvbbtLUvq3jTbGeH"
+export APP_CLIENT_KEY="cf6eS52P7w5GCCspxNu9e6JFGD5NDCyG"
+
+
+# in the python code, access the environment variable like so 
+import os
+DB_HOST = os.getenv('DB_HOST')
