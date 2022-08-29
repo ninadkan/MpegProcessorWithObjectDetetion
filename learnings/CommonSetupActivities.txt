@@ -120,4 +120,6 @@ DB_HOST = os.getenv('DB_HOST')
 
 # If you use https:// with git, it is easier but you have to enter your PAT everytime.
 # two options, either use SSH, using your own key, or use the 
-# HitHub CLI, and it will cache the credentials for you.
+# HitHub CLI, and it will cache the credentials for you. 
+
+For OAuth2.0 if you don't want the refresh token to be issues, add &prompt=login in the original request. 
