@@ -13,6 +13,12 @@
 8  sudo service xrdp restart
 9  sudo passwd azureuser
 
+# Make sure that the RDP port is enabled in the NSG in Azure, Test that the connection is working from Azure portal and then download the RDP file 
+# to connect. 
+
+# Install Chrome on the machine once done
+# You'll remember to start the xrdp session everytime you boot the machine if the RDP session is not working. 
+
 
 # Next copy this file to the newly created folder. 
 
