@@ -34,6 +34,10 @@ https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/c
 # move to the folder where you've added some of the files
 # you've added this Readme.txt file
 
+# to setup the git user and email, use the following commands
+git config --global --edit
+
+
  195  clear
   196  git add .
   197  git status
