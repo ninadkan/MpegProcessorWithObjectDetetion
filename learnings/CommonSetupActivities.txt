@@ -123,3 +123,8 @@ DB_HOST = os.getenv('DB_HOST')
 # HitHub CLI, and it will cache the credentials for you. 
 
 For OAuth2.0 if you don't want the refresh token to be issues, add &prompt=login in the original request. 
+
+# To view mpeg4 files on Ubuntu 
+sudo apt install vlc
+
+
