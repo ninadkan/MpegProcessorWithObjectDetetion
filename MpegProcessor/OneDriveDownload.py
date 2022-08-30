@@ -250,9 +250,10 @@ def dumpItemsWithChildren(tempUrl, id):
 
 tempUrl = URL + 'me/drive/items/'
 id = 'E28C89B8D007DF8A!292526'
-# dumpItemsWithChildren(tempUrl, id)
+dumpItemsWithChildren(tempUrl, id)
 
-id = 'E28C89B8D007DF8A!292542' # Vulcan Drive and Switzerland 2009
+# id = 'E28C89B8D007DF8A!292542' # Vulcan Drive and Switzerland 2009
+id = 'E28C89B8D007DF8A!292529' # Cassette1
 def downloadChildren(tempURL, id):
     print("==============  Downloading Images ===========================")
     url = tempUrl + id + '/children'
@@ -261,7 +262,8 @@ def downloadChildren(tempURL, id):
     for entries in range(len(items)):
         print(items[entries]['name'], '| item-id >', items[entries]['id'])
         # Download the file
-        PATH_TO_FILE = '/VHS2PC/Vulcan Drive and Switzerland 2009/'
+        # PATH_TO_FILE = '/VHS2PC/Vulcan Drive and Switzerland 2009/'
+        PATH_TO_FILE = '/VHS2PC/Casette1/'
         response = requests.get('https://graph.microsoft.com/v1.0/me/drive/root:' +
                                 PATH_TO_FILE + items[entries]['name'] + ':/content', headers=HEADERS)
 
