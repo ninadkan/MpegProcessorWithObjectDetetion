@@ -252,8 +252,8 @@ tempUrl = URL + 'me/drive/items/'
 id = 'E28C89B8D007DF8A!292526'
 dumpItemsWithChildren(tempUrl, id)
 
-# id = 'E28C89B8D007DF8A!292542' # Vulcan Drive and Switzerland 2009
-id = 'E28C89B8D007DF8A!292529' # Cassette1
+# id = 'E28C89B8D007DF8A!292542' # folder name --> Vulcan Drive and Switzerland 2009
+id = 'E28C89B8D007DF8A!292529' # folder name --> Cassette1
 def downloadChildren(tempURL, id):
     print("==============  Downloading Images ===========================")
     url = tempUrl + id + '/children'

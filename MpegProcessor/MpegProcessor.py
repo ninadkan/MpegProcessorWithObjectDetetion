@@ -154,7 +154,7 @@ if __name__=="__main__":
     from os.path import isfile, join
     fileNames = [f for f in listdir(inputFolder) if isfile(join(inputFolder, f))]
 
-    numberOfIterations = 2 # controls our execution to check that code is working, then set this to a very big number
+    numberOfIterations = 100 # controls our execution to check that code is working, then set this to a very big number
     for i, imageFileName in enumerate(fileNames):
         if ((numberOfIterations > 0) and (i > numberOfIterations)):
             break; # come of of the loop
