@@ -158,3 +158,4 @@ cython_debug/
 **/placeholder.txtinit_env_vars.sh
 **/init_env_vars.sh
 **/Data
+**/labelledImages/

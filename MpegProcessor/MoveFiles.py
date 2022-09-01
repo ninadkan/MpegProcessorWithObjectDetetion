@@ -10,7 +10,8 @@ def moveFiles(  sourceFolder,
                 partialInputFileName,
                 partialInputFileNameExtension,
                 startFileNumber,
-                endFileNumber):
+                endFileNumber,
+                deleteFile = False):
     '''
     This python function moves a collection of files to a specified destination folder \r\n
     The destination folder, if one level does not exist is created \r
@@ -21,6 +22,7 @@ def moveFiles(  sourceFolder,
     partialInputFileNameExtension = extension of the file name that is to be copied \v
     startFileNumber = start file number \n
     endFileNumber = end file number. This number is not executed \n
+    deleteFile = set to true to remove the file, else it moves the file
     Function returns the number of files successfully moved \n
     '''
 
@@ -35,11 +37,12 @@ def moveFiles(  sourceFolder,
     for count in range(startFileNumber, endFileNumber):
         countNumber = "%#06d" % (count)
         sourceFileName = sourceFolder + partialInputFileName + countNumber + partialInputFileNameExtension
-        print ("Source File = " + sourceFileName)
-        destinationFileName = newDestinationFolderName + partialInputFileName + countNumber + partialInputFileNameExtension
-        print ("Destination File = " + destinationFileName)
-        os.rename(sourceFileName, destinationFileName)
-    return count
+        if (deleteFile):
+            os.remove(sourceFileName)
+        else:
+            destinationFileName = newDestinationFolderName + partialInputFileName + countNumber + partialInputFileNameExtension
+            os.rename(sourceFileName, destinationFileName)
+    return (endFileNumber - startFileNumber)
 
 
 if __name__ == "__main__":
@@ -84,17 +87,52 @@ if __name__ == "__main__":
 
     #     # Log the time
     time_start = time.time()
-    numberOfFilesMoved = moveFiles(     sourceFolder="./Data/Output/Cassette1/0/",
-                                        destinationFolder= "./labelledImages/",
-                                        imageLabel= 8,
-                                        partialInputFileName= "2022-08-22 20-04-13 Date - " ,
-                                        partialInputFileNameExtension=".jpg" ,
-                                        startFileNumber=1,
-                                        endFileNumber =210)
 
-    time_end = time.time()
-    elapsedTime = time_end-time_start
-    print("Elapsed time = " + time.strftime("%H:%M:%S", time.gmtime(elapsedTime))+ " Total files moved = {0}".format(str(numberOfFilesMoved)))   
 
+    itemList = []
+    itemList.append (tuple([1, 2000, 2, False, "Date"]))
+    itemList.append (tuple([2000, 5374, 2, True, "Date"]))
+    # itemList.append (tuple([12138, 12491 , 13, False, "Date"]))
+    # itemList.append (tuple([12491, 18622 , 1, False, "Date"]))
+    # itemList.append (tuple([18622, 19898 , 11, False, "Date"]))
+ 
+    itemList.append (tuple([1, 2000, 11, False, "Month"]))
+    itemList.append (tuple([2000, 5374 , 11, True, "Month"]))
+    # itemList.append (tuple([12138, 15000, 2, False, "Month"]))
+    # itemList.append (tuple([15000, 19898 , 2, True, "Month"]))
 
     
+ 
+    itemList.append (tuple([1, 2000, 2003, True, "Year"]))
+    itemList.append (tuple([2000, 5374, 2004, False, "Year"]))
+    # itemList.append (tuple([12491, 16000, 2005, True, "Year"]))
+    # itemList.append (tuple([16000, 19898, 2005, False, "Year"]))
+
+ 
+    
+  
+    
+    
+    for i, item in enumerate(itemList):
+ 
+        startFileNumber=item[0]
+        endFileNumber = item[1]
+        imageLabel= item[2]
+        deleteFile = item[3]
+
+
+        numberOfFilesMoved = moveFiles(     sourceFolder=  "./Data/Output/Cassette1/7/" ,# "./Data/Output/" , # "./Data/Output/Cassette1/0/",
+                                            destinationFolder= "./labelledImages/",
+                                            imageLabel= imageLabel,
+                                            partialInputFileName= "2022-08-22 22-33-48 " + item[4] + " - " ,
+                                            partialInputFileNameExtension=".jpg" ,
+                                            startFileNumber=startFileNumber ,
+                                            endFileNumber = endFileNumber,
+                                            deleteFile = deleteFile)
+
+ 
+        print(" Total files moved = {0} , start File Numner = {1}, End file number = {2}".\
+                                    format(str(numberOfFilesMoved), str(startFileNumber), str(endFileNumber)))   
+    time_end = time.time()
+    elapsedTime = time_end-time_start
+    print("Elapsed time = " + time.strftime("%H:%M:%S", time.gmtime(elapsedTime)))   
