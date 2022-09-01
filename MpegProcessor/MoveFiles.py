@@ -2,13 +2,86 @@
 import argparse
 import os
 import time
+import cv2
 
 
 def countNumberOfFilesInEachFolder(sourceFolder):
     for root, dirs, files in os.walk(sourceFolder):
-        print ("Number of files in {0} folder = {1}".format(root, str(len(files)) ) )
+        if (len(files) > 0):
+            print ("Number of files in {0} folder = {1}".format(root, str(len(files)) ) )
     return
 
+
+def moveAllSameFileToSameFolder(sourceFolder):
+    for root, dirs, files in os.walk(sourceFolder):
+        print ("Number of files in {0} folder = {1}".format(root, str(len(files)) ) )
+        if (len(files) > 0): # indicating that we are looking at some child directory
+            for eachFile in files:
+                sourceFileName = root + '/' + eachFile
+                # print ("source file name = " + sourceFileName)
+                img = cv2.imread(sourceFileName,0)
+                height, width = img.shape[:2]
+                newFolder = root + '/' + str(height) + "-" + str(width) + '/'
+                folderExists = os.path.isdir(newFolder)
+                if not folderExists:
+                    # If folder doesn't exist, then create it.
+                    try:
+                        os.mkdir(newFolder)
+                    except OSError:
+                        pass
+                destinationFileName = newFolder + eachFile 
+                # print ("destination file name = " + destinationFileName)
+                os.rename(sourceFileName, destinationFileName)
+    return
+    
+def removeFolders(sourceFolder):
+    yearIndicator = '/60-110'
+    monthIndicator = '/60-75'
+    dateIndicator = '/60-70'
+    for root, dirs, files in os.walk(sourceFolder):
+            if ((yearIndicator in root) or 
+                (monthIndicator in root)  or
+                (dateIndicator in root) ):
+                if (len(files)> 0):
+                    print ("Error : Number of files in {0} folder = {1}".format(root, str(len(files)) ) )
+                else:
+                    os.rmdir(root)
+    return
+
+def moveFilesSimple(sourceFolder):
+    for root, dirs, files in os.walk(sourceFolder):
+        if (len(files) > 0): 
+            print ("Number of files in {0} folder = {1}".format(root, str(len(files)) ) )
+            yearIndicator = '/60-110'
+            monthIndicator = '/60-75'
+            dateIndicator = '/60-70'
+
+            destinationFolder = ''
+
+            if (yearIndicator in root):
+                baseIndex = root.find(yearIndicator)
+                destinationFolder = root[0:baseIndex]
+            else:
+                if (monthIndicator in root):
+                    baseIndex = root.find(monthIndicator)
+                    parentFolderIndex = root.rfind('/', 0, baseIndex)
+                    monthName = root[parentFolderIndex +1:baseIndex]
+                    destinationFolder = './labelledImages/month/' + monthName
+                else:
+                    if (dateIndicator in root):
+                        baseIndex = root.find(dateIndicator)
+                        destinationFolder = root[0:baseIndex]
+                    else:
+                        print ("Huh")
+            print ("    source Folder =" + root)
+            if (len(destinationFolder) > 0):
+                print ("    destinationFolder = " + destinationFolder)
+
+                for eachFile in files:
+                    sourceFileName = root + '/' + eachFile
+                    destinationFileName = destinationFolder + '/' + eachFile
+                    os.rename(sourceFileName, destinationFileName)
+    return
 
 def moveFiles(  sourceFolder,
                 destinationFolder,
@@ -132,7 +205,7 @@ if __name__ == "__main__":
 
 
     #     numberOfFilesMoved = moveFiles(     sourceFolder=  "./Data/Output/Cassette1/8/" ,# "./Data/Output/" , # "./Data/Output/Cassette1/0/",
-    #                                         destinationFolder= "./labelledImages/",
+    #                                         destinationFolder= "./labelledImagesFormatted/",
     #                                         imageLabel= imageLabel,
     #                                         partialInputFileName= "2022-08-22 21-05-52 " + item[4] + " - " ,
     #                                         partialInputFileNameExtension=".jpg" ,
@@ -145,9 +218,13 @@ if __name__ == "__main__":
     #                                 format(str(numberOfFilesMoved), str(startFileNumber), str(endFileNumber)))  
     # 
      
+ 
+
+    # countNumberOfFilesInEachFolder("./labelledImagesFormatted/")
+    # moveAllSameFileToSameFolder("./labelledImagesFormatted/")
+    # moveFilesSimple("./labelledImagesFormatted/")
+    removeFolders('./labelledImagesFormatted/')
+
     time_end = time.time()
     elapsedTime = time_end-time_start
     print("Elapsed time = " + time.strftime("%H:%M:%S", time.gmtime(elapsedTime))) 
-
-
-    countNumberOfFilesInEachFolder("./labelledImages/")

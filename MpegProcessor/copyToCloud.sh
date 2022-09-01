@@ -3,6 +3,6 @@
 
 # $SASTokenForDest is stored as environmental variable
 destinationLocation="https://mpegparserimages.file.core.windows.net/images/"
-sourceLocation="/home/azureuser/MpegProcessorWithObjectDetetion/MpegProcessor/Data/"
+sourceLocation="/home/azureuser/MpegProcessorWithObjectDetetion/MpegProcessor/labelledImagesFormatted/"
 
 sudo azcopy cp "${sourceLocation}" "${destinationLocation}${SASTokenForDest}" --recursive
