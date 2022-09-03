@@ -3,6 +3,49 @@ import argparse
 import os
 import time
 import cv2
+import random
+
+
+# https://github.com/deep-diver/CIFAR10-img-classification-tensorflow/blob/master/CIFAR10_image_classification.py
+# https://towardsdatascience.com/cifar-10-image-classification-in-tensorflow-5b501f7dc77c
+
+
+def generateRandomNumberList(numberOfFilesToBeSelected, maxNumOfFilesInFolder):
+    arr = []
+    tmp = random.randint(0, maxNumOfFilesInFolder)
+    for x in range(numberOfFilesToBeSelected):
+        while tmp in arr:
+            tmp = random.randint(0, maxNumOfFilesInFolder)
+        arr.append(tmp)
+          
+    arr.sort()
+      
+    return arr
+
+
+def findMinNumberOfFiles(sourceFolder):
+    minFound = 200 # need to have at least these many for good object detection to work
+    for root, dirs, files in os.walk(sourceFolder):
+        currentSize = len(files)
+        if (len(currentSize) > 0):
+            print ("Number of files in {0} folder = {1}".format(root, str(len(currentSize)) ) )
+            if currentSize < minFound:
+                print ("swapping minimum")
+                minFound = currentSize
+    return minFound
+
+
+
+def preProcessImageDataSet(sourceFolder, outputFolder, label, v):
+    minNumber = findMinNumberOfFiles(sourceFolder); 
+    for root, dirs, files in os.walk(sourceFolder):
+        currentSize = len(files)
+        if (len(currentSize) > 0):
+            randomList = generateRandomNumberList(minNumber, currentSize)
+            # Now we can pick the random index from our list and populate
+
+
+
 
 
 def countNumberOfFilesInEachFolder(sourceFolder):
@@ -220,10 +263,10 @@ if __name__ == "__main__":
      
  
 
-    # countNumberOfFilesInEachFolder("./labelledImagesFormatted/")
+    countNumberOfFilesInEachFolder("./labelledImagesFormatted/")
     # moveAllSameFileToSameFolder("./labelledImagesFormatted/")
     # moveFilesSimple("./labelledImagesFormatted/")
-    removeFolders('./labelledImagesFormatted/')
+    # removeFolders('./labelledImagesFormatted/')
 
     time_end = time.time()
     elapsedTime = time_end-time_start
