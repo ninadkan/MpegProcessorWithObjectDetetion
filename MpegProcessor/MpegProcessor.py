@@ -21,6 +21,9 @@ endpoint= os.getenv('endpoint')
 
 
 FRAMES_PER_SECOND=25
+ONE_ITERATION_JUMP=2 # check every two seconds
+FRAMES_INCREMENT= FRAMES_PER_SECOND*ONE_ITERATION_JUMP
+TRANSITION_FRAMES=3 # When dates transition check three frames before and after. 
 DATA_LIST = []
 
 def extractString(subsetImage, output_loc, count, imageFileName, imageType, imageWrite = False, displayImage=False):
@@ -76,11 +79,58 @@ def extractString(subsetImage, output_loc, count, imageFileName, imageType, imag
     # # print("Number detected = " + numberDetected)
     return numberDetected
 
+def extractDateStringFromFrame(frame, output_loc, imageFileName):
+    # # import pytesseract
+    # # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
+    # # print(pytesseract.image_to_string(r'D:\examplepdf2image.png'))
+
+    # # # get dimensions of image
+    # # dimensions = frame.shape
+    
+    # # # height, width, number of channels in image
+    # # height = frame.shape[0]
+    # # width = frame.shape[1]
+    # # channels = frame.shape[2]
+    
+    # # print('Image Dimension    : ',dimensions)
+    # # print('Image Height       : ',height) 
+    # # print('Image Width        : ',width)
+    # # print('Number of Channels : ',channels)
+
+
+    # # subsetImage = frame[425:465, 110:340]
+    # # Image height = 576 - (460-500), width = 720 (110:160, 170:225, 240:330)
+
+    # subsetImage = frame[455:505, 110:330]   # minimum size has to be 50X50
+    # # gray_image = cv2.cvtColor(subsetImage, cv2.COLOR_BGR2GRAY)
+    # # threshold_img = cv2.copyMakeBorder(gray_image, 5, 5, 5, 5, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+
+    # fileNameMinusExtension = imageFileName.partition('.')[0]
+    # jpgFileName = fileNameMinusExtension + ".jpg"
+
+    # outputfilename = os.path.join(output_loc, jpgFileName)
+    # print("output file name =" + outputfilename)
+    # cv2.imwrite(outputfilename, subsetImage)
+
+    
+    # # SubsetImageDate = frame[460:500, 110:160]
+    # # SubsetImageMonth = frame[460:500, 170:225]
+    # # subsetImageYear = frame[460:500, 240:330]
+
+    # # recognize_printed_text_in_stream(outputfilename)
+    # recognize_text(outputfilename)
+    
+    # # strDate = str.strip(extractString(SubsetImageDate, output_loc, count, imageFileName, "Date - ", imageWrite=True))
+    # # strMonth = str.strip(extractString(SubsetImageMonth, output_loc, count, imageFileName, "Month - ", imageWrite=True))
+    # # strYear = str.strip(extractString(subsetImageYear, output_loc, count, imageFileName, "Year - ", imageWrite=True))
+
+    # # print (" count = " + str(count + 1) + ": Date = " + strDate +"/" + strMonth + "/" + strYear)
+    return
 
 def recognize_text(outputfilename):
     """RecognizeTextUsingRecognizeAPI.
-
     This will recognize text of the given image using the recognizeText API.
+    The file name of the image is provided. 
     """
     line_text = ""
     client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(subscription_key))
@@ -109,56 +159,6 @@ def recognize_text(outputfilename):
         line_text = " ".join([word.text for word in line.words])
     print("Date extracted = " + line_text)
     return line_text
-
-
-
-# def extractDateStringFromFrame(frame, output_loc, imageFileName):
-#     # # import pytesseract
-#     # # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
-#     # # print(pytesseract.image_to_string(r'D:\examplepdf2image.png'))
-
-#     # # # get dimensions of image
-#     # # dimensions = frame.shape
-    
-#     # # # height, width, number of channels in image
-#     # # height = frame.shape[0]
-#     # # width = frame.shape[1]
-#     # # channels = frame.shape[2]
-    
-#     # # print('Image Dimension    : ',dimensions)
-#     # # print('Image Height       : ',height) 
-#     # # print('Image Width        : ',width)
-#     # # print('Number of Channels : ',channels)
-
-
-#     # # subsetImage = frame[425:465, 110:340]
-#     # # Image height = 576 - (460-500), width = 720 (110:160, 170:225, 240:330)
-
-#     # subsetImage = frame[455:505, 110:330]   # minimum size has to be 50X50
-#     # # gray_image = cv2.cvtColor(subsetImage, cv2.COLOR_BGR2GRAY)
-#     # # threshold_img = cv2.copyMakeBorder(gray_image, 5, 5, 5, 5, cv2.BORDER_CONSTANT, value=(255, 255, 255))
-
-#     # fileNameMinusExtension = imageFileName.partition('.')[0]
-#     # jpgFileName = fileNameMinusExtension + ".jpg"
-
-#     # outputfilename = os.path.join(output_loc, jpgFileName)
-#     # print("output file name =" + outputfilename)
-#     # cv2.imwrite(outputfilename, subsetImage)
-
-    
-#     # # SubsetImageDate = frame[460:500, 110:160]
-#     # # SubsetImageMonth = frame[460:500, 170:225]
-#     # # subsetImageYear = frame[460:500, 240:330]
-
-#     # # recognize_printed_text_in_stream(outputfilename)
-#     # recognize_text(outputfilename)
-    
-#     # # strDate = str.strip(extractString(SubsetImageDate, output_loc, count, imageFileName, "Date - ", imageWrite=True))
-#     # # strMonth = str.strip(extractString(SubsetImageMonth, output_loc, count, imageFileName, "Month - ", imageWrite=True))
-#     # # strYear = str.strip(extractString(subsetImageYear, output_loc, count, imageFileName, "Year - ", imageWrite=True))
-
-#     # # print (" count = " + str(count + 1) + ": Date = " + strDate +"/" + strMonth + "/" + strYear)
-#     return
 
 def appendToGlobalList(     frameNumber , 
                             extractedDate,
@@ -191,40 +191,38 @@ def appendToGlobalList(     frameNumber ,
 
     return 
 
-
 def isStringDate(stringDate, frameNumber):
     bRv = False
     fmt ="%d/%m/%Y"
     print("checking if its a string = " + stringDate)
+    parsedDateTime = None
     try:
-        t = dt.datetime.strptime(stringDate, fmt)
-        appendToGlobalList(frameNumber=frameNumber, extractedDate=stringDate, formattedDate=t)
+        parsedDateTime = dt.datetime.strptime(stringDate, fmt)
+        appendToGlobalList(frameNumber=frameNumber, extractedDate=stringDate, formattedDate=parsedDateTime)
         bRv = True
     except ValueError as err:
         pass
 
-    return bRv
-
+    return bRv, parsedDateTime
 
 def createSubImageAndSave(frame, output_loc, imageFileName, frameNumber ):
     subsetImage = frame[455:505, 110:330]   # minimum size has to be 50X50
-    fileNameMinusExtension = imageFileName.partition('.')[0]
+    fileNameMinusExtension = imageFileName.partition('.')[0] # get the file name minus the extension
     jpgFileName = fileNameMinusExtension + ".jpg"
 
     outputfilename = os.path.join(output_loc, jpgFileName)
     # print("output file name =" + outputfilename)
     cv2.imwrite(outputfilename, subsetImage)
     returnedDate = recognize_text(outputfilename)
-    if (     
-            isinstance(returnedDate, str) 
+    brv = False
+    parsedDateTime = None
+    if (    isinstance(returnedDate, str) 
             and len(returnedDate) > 0):
         returnedDate = returnedDate.strip()
         returnedDate = returnedDate.replace('.', '/')
         returnedDate = returnedDate.replace(' ', '')
-        isStringDate(returnedDate, frameNumber)
-    return 
-
-
+        brv, parsedDateTime = isStringDate(returnedDate, frameNumber)
+    return brv, parsedDateTime
 
 def video_to_frames(input_loc, output_loc, imageFileName):
     """Function to extract frames from input video file
@@ -243,20 +241,45 @@ def video_to_frames(input_loc, output_loc, imageFileName):
     except OSError:
         pass
     # Log the time
-
-
     time_start = time.time()
 
-
-
     DATA_LIST = []
+
+
+    # Find OpenCV version
+
+    (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
+
+
+
 
     # Start capturing the feed
     cap = cv2.VideoCapture(input_loc)
     # Find the number of frames
     video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
     print ("Number of frames: ", video_length)
+
+    # With webcam get(CV_CAP_PROP_FPS) does not work.
+    # Let's see for ourselves.
+    if int(major_ver)  < 3 :
+        frame_rate = cap.get(cv2.cv.CV_CAP_PROP_FPS)
+        print("Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(frame_rate))
+    else :
+        frame_rate = cap.get(cv2.CAP_PROP_FPS)
+        print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(frame_rate))
+
+
+
+    # frame_rate = int(cap.get(cv2.cv.CV_CAP_PROP_FPS))
+    # print ("Frame rate: ", frame_rate)
+    video_Time = float(cap.get(cv2.CAP_PROP_POS_MSEC))
+    print ("Video Time : ", str(video_Time))
+    number_of_msec_per_frame = float(1000/frame_rate)
+    print ("Number of msec per frame : ", str(number_of_msec_per_frame))
+
     frameCount = 0
+    currentCapturedTime = dt.datetime.min #set it to (1,1,1,0,0)
+    globalVideoTime = 0
     print ("Converting video..\n")
     # Start converting the video
     while cap.isOpened():
@@ -266,25 +289,28 @@ def video_to_frames(input_loc, output_loc, imageFileName):
             continue
         # Write the results back to output location.
         # extract Date from the Frame 
-        createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=frameCount)
-        # cv2.imwrite(output_loc + "/%#05d.jpg" % (frameCount+1), frame)
-        frameCount = frameCount + 1
-        # If there are no more frames left
-        if (frameCount > (video_length-1) or ( frameCount > 5 )):
-        #if (frameCount > (video_length-1)):
-            # Log the time again
-            time_end = time.time()
-            # Release the feed
-            cap.release()
-            # Print stats
-            print ("Done extracting frames.\n%d frames extracted" % frameCount)
-            print ("It took %d seconds forconversion." % (time_end-time_start))
+        currentVideoTime = cap.get(cv2.CAP_PROP_POS_MSEC)
+        print("Current Video Time =", str(currentVideoTime))
+        brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=frameCount)
+        if brv: 
+            # cv2.imwrite(output_loc + "/%#05d.jpg" % (frameCount+1), frame)
+            frameCount = frameCount + 1
+            # If there are no more frames left
+            if (frameCount > (video_length-1) or ( frameCount > 50 )):
+            #if (frameCount > (video_length-1)):
+                # Log the time again
+                time_end = time.time()
+                # Release the feed
+                cap.release()
+                # Print stats
+                print ("Done extracting frames.\n%d frames extracted" % frameCount)
+                print ("It took %d seconds forconversion." % (time_end-time_start))
 
-            dfOut = pd.DataFrame(DATA_LIST)
-            fileNameMinusExtension = imageFileName.partition('.')[0]
-            outputFolderPathFileName= output_loc + fileNameMinusExtension + ".csv"
-            dfOut.to_csv(outputFolderPathFileName)
-            break
+                dfOut = pd.DataFrame(DATA_LIST)
+                fileNameMinusExtension = imageFileName.partition('.')[0]
+                outputFolderPathFileName= output_loc + fileNameMinusExtension + ".csv"
+                dfOut.to_csv(outputFolderPathFileName, index=False)
+                break
 
 if __name__=="__main__":
     #input_loc = './Data/2022-08-23 14-03-48.mp4'
@@ -295,9 +321,9 @@ if __name__=="__main__":
 
     from os import listdir
     from os.path import isfile, join
-    fileNames = [f for f in listdir(inputFolder) if isfile(join(inputFolder, f))]
+    fileNames = [f for f in listdir(inputFolder) if isfile(join(inputFolder, f))] # extract filename from a folder
 
-    numberOfIterations = 1 # controls our execution to check that code is working, then set this to a very big number
+    numberOfIterations = 0 # controls our execution to check that code is working, then set this to a very big number
     for i, imageFileName in enumerate(fileNames):
         if ((numberOfIterations > 0) and (i > numberOfIterations)):
             break; # come of of the loop
