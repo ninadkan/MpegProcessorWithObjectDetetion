@@ -20,9 +20,7 @@ endpoint= os.getenv('endpoint')
 
 
 
-FRAMES_PER_SECOND=25
-ONE_ITERATION_JUMP=2 # check every two seconds
-FRAMES_INCREMENT= FRAMES_PER_SECOND*ONE_ITERATION_JUMP
+FRAMES_PER_SECOND=-1
 TRANSITION_FRAMES=3 # When dates transition check three frames before and after. 
 DATA_LIST = []
 
@@ -157,7 +155,7 @@ def recognize_text(outputfilename):
     
     for line in lines:
         line_text = " ".join([word.text for word in line.words])
-    print("Date extracted = " + line_text)
+    # print("Date extracted = " + line_text)
     return line_text
 
 def appendToGlobalList(     frameNumber , 
@@ -165,7 +163,7 @@ def appendToGlobalList(     frameNumber ,
                             formattedDate):
  
     global DATA_LIST
-
+    global FRAMES_PER_SECOND
 
 
     elapsedSeconds, remainingFrames = divmod(frameNumber, FRAMES_PER_SECOND)
@@ -194,7 +192,7 @@ def appendToGlobalList(     frameNumber ,
 def isStringDate(stringDate, frameNumber):
     bRv = False
     fmt ="%d/%m/%Y"
-    print("checking if its a string = " + stringDate)
+    # print("checking if its a string = " + stringDate)
     parsedDateTime = None
     try:
         parsedDateTime = dt.datetime.strptime(stringDate, fmt)
@@ -224,6 +222,70 @@ def createSubImageAndSave(frame, output_loc, imageFileName, frameNumber ):
         brv, parsedDateTime = isStringDate(returnedDate, frameNumber)
     return brv, parsedDateTime
 
+def findChangeOverFrameNumber(  cap, 
+                                output_loc, 
+                                imageFileName,
+                                frameCount, 
+                                numberOfFrameIncrementsPerIteration,
+                                currentCapturedTime):
+
+    changeOverFrameNumber = frameCount
+
+
+    startPosition = int(frameCount) - int(numberOfFrameIncrementsPerIteration)
+    startPosition = 0 if startPosition < 0 else startPosition
+
+    maxIndex  = int(frameCount) + int(numberOfFrameIncrementsPerIteration)
+    step = int(FRAMES_PER_SECOND)
+
+    if (numberOfFrameIncrementsPerIteration < FRAMES_PER_SECOND ):
+        step = 1
+
+
+    bExitLoop = False
+
+
+    for x in range (startPosition, maxIndex, step): 
+        print ("x = {0}".format(str(x)))
+        cap.set(cv2.CAP_PROP_POS_FRAMES, x)
+        ret, frame = cap.read() # for the first time, we set that to the first instance. Next one will vary
+        if not ret:
+            continue
+        brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=x)
+        if (brv):
+            if (parsedDateTime != currentCapturedTime):
+                if (step == 1): # we are already single stepping
+                    changeOverFrameNumber = x
+                    print("Found the change-over frame = {0}, date found = {1}".format(str(changeOverFrameNumber), str(parsedDateTime)))
+                    break
+                else:
+                    startIndex = 0 if (x-step < 0) else (x-step)
+                    for y in range (startIndex, x): # 
+                        print ("y = {0}".format(str(y)))
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, y)
+                        ret, frame = cap.read() # for the first time, we set that to the first instance. Next one will vary
+                        if not ret:
+                            continue
+                        brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=y)
+                        if (brv):
+                            if (parsedDateTime != currentCapturedTime ):
+                                changeOverFrameNumber = y
+                                print("Found the change-over frame = {0}, date found = {1}".format(str(changeOverFrameNumber), str(parsedDateTime)))
+                                bExitLoop = True
+                                break
+                            else:
+                                pass
+                        else:
+                            pass
+                    if (bExitLoop): # for the external loop
+                        break
+            else:
+                pass
+        else:
+            print("Date time returned error within the for loop. Continuing!!!")
+
+    return changeOverFrameNumber
+
 def video_to_frames(input_loc, output_loc, imageFileName):
     """Function to extract frames from input video file
     and save them as separate frames in an output directory.
@@ -235,6 +297,7 @@ def video_to_frames(input_loc, output_loc, imageFileName):
     """
 
     global DATA_LIST
+    global FRAMES_PER_SECOND
 
     try:
         os.mkdir(output_loc)
@@ -251,31 +314,33 @@ def video_to_frames(input_loc, output_loc, imageFileName):
     (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
 
 
-
-
     # Start capturing the feed
     cap = cv2.VideoCapture(input_loc)
     # Find the number of frames
-    video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
-    print ("Number of frames: ", video_length)
+    video_frame_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
+    print ("Number of frames: ", video_frame_length)
 
     # With webcam get(CV_CAP_PROP_FPS) does not work.
     # Let's see for ourselves.
     if int(major_ver)  < 3 :
-        frame_rate = cap.get(cv2.cv.CV_CAP_PROP_FPS)
-        print("Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(frame_rate))
+        FRAMES_PER_SECOND = cap.get(cv2.cv.CV_CAP_PROP_FPS)
+        print("Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(FRAMES_PER_SECOND))
     else :
-        frame_rate = cap.get(cv2.CAP_PROP_FPS)
-        print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(frame_rate))
+        FRAMES_PER_SECOND = cap.get(cv2.CAP_PROP_FPS)
+        print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(FRAMES_PER_SECOND))
 
 
-
-    # frame_rate = int(cap.get(cv2.cv.CV_CAP_PROP_FPS))
-    # print ("Frame rate: ", frame_rate)
     video_Time = float(cap.get(cv2.CAP_PROP_POS_MSEC))
-    print ("Video Time : ", str(video_Time))
-    number_of_msec_per_frame = float(1000/frame_rate)
+    print ("Video Time : ", str(video_Time)) # this time is displayed in what number; This returns 0.0 
+    actualVideo_Time = float(video_frame_length/FRAMES_PER_SECOND)
+
+    print ("True Video Time in seconds : ", str(actualVideo_Time)) 
+
+    number_of_msec_per_frame = float(1000/FRAMES_PER_SECOND)
     print ("Number of msec per frame : ", str(number_of_msec_per_frame))
+
+    NumberOfSecondsIncrementPerSuccessfulIteration = 20 # increment X seconds per iteration. 
+    numberOfFrameIncrementsPerIteration = FRAMES_PER_SECOND* NumberOfSecondsIncrementPerSuccessfulIteration
 
     frameCount = 0
     currentCapturedTime = dt.datetime.min #set it to (1,1,1,0,0)
@@ -284,33 +349,60 @@ def video_to_frames(input_loc, output_loc, imageFileName):
     # Start converting the video
     while cap.isOpened():
         # Extract the frame
-        ret, frame = cap.read()
+        ret, frame = cap.read() # for the first time, we set that to the first instance. Next one will vary
         if not ret:
             continue
         # Write the results back to output location.
         # extract Date from the Frame 
-        currentVideoTime = cap.get(cv2.CAP_PROP_POS_MSEC)
-        print("Current Video Time =", str(currentVideoTime))
-        brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=frameCount)
-        if brv: 
-            # cv2.imwrite(output_loc + "/%#05d.jpg" % (frameCount+1), frame)
-            frameCount = frameCount + 1
-            # If there are no more frames left
-            if (frameCount > (video_length-1) or ( frameCount > 50 )):
-            #if (frameCount > (video_length-1)):
-                # Log the time again
-                time_end = time.time()
-                # Release the feed
-                cap.release()
-                # Print stats
-                print ("Done extracting frames.\n%d frames extracted" % frameCount)
-                print ("It took %d seconds forconversion." % (time_end-time_start))
+        # cv2.imwrite(output_loc + "/%#05d.jpg" % (frameCount+1), frame)
+        # frameCount = frameCount + 1
+        # If there are no more frames left
+        if (frameCount >= (video_frame_length)):
+        #if (frameCount > (video_frame_length-1)):
+            # Log the time again
+            time_end = time.time()
+            # Release the feed
+            cap.release()
+            # Print stats
+            print ("Done extracting frames.\n%d frames extracted" % frameCount)
+            print ("It took %d seconds forconversion." % (time_end-time_start))
 
-                dfOut = pd.DataFrame(DATA_LIST)
-                fileNameMinusExtension = imageFileName.partition('.')[0]
-                outputFolderPathFileName= output_loc + fileNameMinusExtension + ".csv"
-                dfOut.to_csv(outputFolderPathFileName, index=False)
-                break
+            dfOut = pd.DataFrame(DATA_LIST)
+            fileNameMinusExtension = imageFileName.partition('.')[0]
+            outputFolderPathFileName= output_loc + fileNameMinusExtension + ".csv"
+            dfOut.to_csv(outputFolderPathFileName, index=False)
+            break
+        else:
+            # now we set the Frames to grow by the number of seconds that we want to increment
+            # ???
+            currentVideoTime = cap.get(cv2.CAP_PROP_POS_MSEC)
+            # print("Current Video Time =", str(currentVideoTime))
+            brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=frameCount)
+
+            if (brv):
+                if (currentCapturedTime == dt.datetime.min ): # first time
+                    currentCapturedTime = parsedDateTime
+                else:   # we've found a date different from our existing date
+                    if (currentCapturedTime == parsedDateTime): 
+                        pass
+                    else:
+                        print("Date time change found!!! Need to find changeover point and start from there")
+                        findChangeOverFrameNumber(  cap, output_loc, imageFileName,
+                                                    frameCount, 
+                                                    numberOfFrameIncrementsPerIteration,
+                                                    currentCapturedTime)
+                        currentCapturedTime = parsedDateTime
+            else:
+                print("Parsing Date time returned error")
+
+            frameCount += numberOfFrameIncrementsPerIteration 
+
+            if (frameCount > (video_frame_length-1)): # ensure that we are not getting out of bound
+                frameCount = video_frame_length
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frameCount-1)
+            else:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frameCount)
+
 
 if __name__=="__main__":
     #input_loc = './Data/2022-08-23 14-03-48.mp4'
@@ -323,7 +415,7 @@ if __name__=="__main__":
     from os.path import isfile, join
     fileNames = [f for f in listdir(inputFolder) if isfile(join(inputFolder, f))] # extract filename from a folder
 
-    numberOfIterations = 0 # controls our execution to check that code is working, then set this to a very big number
+    numberOfIterations = 1 # controls our execution to check that code is working, then set this to a very big number
     for i, imageFileName in enumerate(fileNames):
         if ((numberOfIterations > 0) and (i > numberOfIterations)):
             break; # come of of the loop
