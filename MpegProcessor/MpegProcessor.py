@@ -21,8 +21,20 @@ endpoint= os.getenv('endpoint')
 
 
 FRAMES_PER_SECOND=-1
-TRANSITION_FRAMES=3 # When dates transition check three frames before and after. 
 DATA_LIST = []
+NO_OF_OBJ_DETECTION_API_INVOCATIONS = 0
+
+COL_NAME_FRAME_NUMBER="Frame Number"
+COL_NAME_DATE_TIME_EXTRACTED="Date Time Extracted"
+COL_NAME_FORMATTED_DATE="Formatted Date"
+COL_NAME_ELAPSED_TIME_FROM_ORIGIN="Elapsed Time from Origin"
+
+COL_NAME_START_FRAME_NUMBER = "Start Frame Number"
+COL_NAME_END_FRAME_NUMBER = "End Frame Number"
+COL_NAME_START_VIDEO_TIME = "Start Video Time"
+COL_NAME_END_VIDEO_TIME = "End Vide Time"
+COL_NAME_NUMBER_OF_FRAMES = "Number of Frames Used"
+COL_NAME_ELAPSED_TIME = "Elapsed Time"
 
 def extractString(subsetImage, output_loc, count, imageFileName, imageType, imageWrite = False, displayImage=False):
     numberDetected = 0
@@ -117,7 +129,7 @@ def extractDateStringFromFrame(frame, output_loc, imageFileName):
 
     # # recognize_printed_text_in_stream(outputfilename)
     # recognize_text(outputfilename)
-    
+    # Salary
     # # strDate = str.strip(extractString(SubsetImageDate, output_loc, count, imageFileName, "Date - ", imageWrite=True))
     # # strMonth = str.strip(extractString(SubsetImageMonth, output_loc, count, imageFileName, "Month - ", imageWrite=True))
     # # strYear = str.strip(extractString(subsetImageYear, output_loc, count, imageFileName, "Year - ", imageWrite=True))
@@ -130,6 +142,8 @@ def recognize_text(outputfilename):
     This will recognize text of the given image using the recognizeText API.
     The file name of the image is provided. 
     """
+
+    global NO_OF_OBJ_DETECTION_API_INVOCATIONS
     line_text = ""
     client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(subscription_key))
 
@@ -147,6 +161,7 @@ def recognize_text(outputfilename):
         image_analysis = client.get_text_operation_result(
             operation_id=operation_id)
 
+    NO_OF_OBJ_DETECTION_API_INVOCATIONS +=1 
     #print("Job completion is: {}\n".format(image_analysis.status))
 
     #print("Recognized:\n")
@@ -158,13 +173,9 @@ def recognize_text(outputfilename):
     # print("Date extracted = " + line_text)
     return line_text
 
-def appendToGlobalList(     frameNumber , 
-                            extractedDate,
-                            formattedDate):
- 
-    global DATA_LIST
-    global FRAMES_PER_SECOND
 
+def getVideoElapsedTime(frameNumber):
+    global FRAMES_PER_SECOND
 
     elapsedSeconds, remainingFrames = divmod(frameNumber, FRAMES_PER_SECOND)
     m,s = divmod(elapsedSeconds, 60)
@@ -176,11 +187,30 @@ def appendToGlobalList(     frameNumber ,
     seconds = "%#02d" % (elapsedSeconds)
     framesRem = "%#02d" % (remainingFrames)
 
+    sRV = hour + ":" + minutes + ":" + seconds + "." +framesRem
+    return sRV
+
+DATE_FORMAT = "%d %b %Y"
+RECORDING_DATE_FORMAT="%d/%m/%Y"
+
+def appendToGlobalList(     frameNumber , 
+                            extractedDate,
+                            formattedDate):
+ 
+    global DATA_LIST
+    global FRAMES_PER_SECOND
+    global COL_NAME_FRAME_NUMBER
+    global COL_NAME_DATE_TIME_EXTRACTED
+    global COL_NAME_FORMATTED_DATE
+    global COL_NAME_ELAPSED_TIME_FROM_ORIGIN
+    global DATE_FORMAT
+
+
     thisdict =	{
-            "Frame Number" : frameNumber,
-            "DateTime Extracted" : extractedDate ,
-            "Formatted Date": formattedDate.strftime("%d %b %Y"),
-            "Elpsed Time From Origin" : hour + ":" + minutes + ":" + seconds + ":" +framesRem
+            COL_NAME_FRAME_NUMBER : int(frameNumber),
+            COL_NAME_DATE_TIME_EXTRACTED: extractedDate ,
+            COL_NAME_FORMATTED_DATE: formattedDate.strftime(DATE_FORMAT),
+            COL_NAME_ELAPSED_TIME_FROM_ORIGIN : getVideoElapsedTime(frameNumber)
     }
 
     print (thisdict)
@@ -191,11 +221,10 @@ def appendToGlobalList(     frameNumber ,
 
 def isStringDate(stringDate, frameNumber):
     bRv = False
-    fmt ="%d/%m/%Y"
-    # print("checking if its a string = " + stringDate)
+    global RECORDING_DATE_FORMAT
     parsedDateTime = None
     try:
-        parsedDateTime = dt.datetime.strptime(stringDate, fmt)
+        parsedDateTime = dt.datetime.strptime(stringDate, RECORDING_DATE_FORMAT)
         appendToGlobalList(frameNumber=frameNumber, extractedDate=stringDate, formattedDate=parsedDateTime)
         bRv = True
     except ValueError as err:
@@ -210,6 +239,7 @@ def createSubImageAndSave(frame, output_loc, imageFileName, frameNumber ):
 
     outputfilename = os.path.join(output_loc, jpgFileName)
     # print("output file name =" + outputfilename)
+    # //TODO:: There has to be a better way than this
     cv2.imwrite(outputfilename, subsetImage)
     returnedDate = recognize_text(outputfilename)
     brv = False
@@ -229,8 +259,7 @@ def findChangeOverFrameNumber(  cap,
                                 numberOfFrameIncrementsPerIteration,
                                 currentCapturedTime):
 
-    changeOverFrameNumber = frameCount
-
+    changeOverFrameNumber = frameCount  # use the current index as the return number
 
     startPosition = int(frameCount) - int(numberOfFrameIncrementsPerIteration)
     startPosition = 0 if startPosition < 0 else startPosition
@@ -250,41 +279,117 @@ def findChangeOverFrameNumber(  cap,
         cap.set(cv2.CAP_PROP_POS_FRAMES, x)
         ret, frame = cap.read() # for the first time, we set that to the first instance. Next one will vary
         if not ret:
+            print("in X - frame read Error!!!")
             continue
-        brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=x)
-        if (brv):
-            if (parsedDateTime != currentCapturedTime):
-                if (step == 1): # we are already single stepping
-                    changeOverFrameNumber = x
-                    print("Found the change-over frame = {0}, date found = {1}".format(str(changeOverFrameNumber), str(parsedDateTime)))
-                    break
-                else:
-                    startIndex = 0 if (x-step < 0) else (x-step)
-                    for y in range (startIndex, x): # 
-                        print ("y = {0}".format(str(y)))
-                        cap.set(cv2.CAP_PROP_POS_FRAMES, y)
-                        ret, frame = cap.read() # for the first time, we set that to the first instance. Next one will vary
-                        if not ret:
-                            continue
-                        brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=y)
-                        if (brv):
-                            if (parsedDateTime != currentCapturedTime ):
-                                changeOverFrameNumber = y
-                                print("Found the change-over frame = {0}, date found = {1}".format(str(changeOverFrameNumber), str(parsedDateTime)))
-                                bExitLoop = True
-                                break
-                            else:
-                                pass
-                        else:
-                            pass
-                    if (bExitLoop): # for the external loop
-                        break
-            else:
-                pass
         else:
-            print("Date time returned error within the for loop. Continuing!!!")
+            brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=x)
+            if (brv):
+                if (parsedDateTime != currentCapturedTime):
+                    if (step == 1): # we are already single stepping
+                        changeOverFrameNumber = x
+                        currentCapturedTime = parsedDateTime
+                        print("Found the change-over frame = {0}, date found = {1}".format(str(changeOverFrameNumber), str(parsedDateTime)))
+                        break
+                    else:
+                        startIndex = 0 if (x-step < 0) else (x-step)
+                        for y in range (startIndex, x): # 
+                            print ("y = {0}".format(str(y)))
+                            cap.set(cv2.CAP_PROP_POS_FRAMES, y)
+                            ret, frame = cap.read() # for the first time, we set that to the first instance. Next one will vary
+                            if not ret:
+                                print("in y - frame read Error!!!")
+                                continue
+                            else:
+                                brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=y)
+                                if (brv):
+                                    if (parsedDateTime != currentCapturedTime ):
+                                        changeOverFrameNumber = y
+                                        currentCapturedTime = parsedDateTime
+                                        print("Found the change-over frame = {0}, date found = {1}".format(str(changeOverFrameNumber), str(parsedDateTime)))
+                                        bExitLoop = True
+                                        break
+                                    else:
+                                        pass
+                                else:
+                                    print("in y - date returned error!")
+                                    pass
+                        if (bExitLoop): # for the external loop
+                            break
+                else:
+                    pass
+            else:
+                print("Date time returned error within the for loop. Continuing!!!")
 
-    return changeOverFrameNumber
+    return int(changeOverFrameNumber), currentCapturedTime
+
+def processAExcelFileWriteOutput(output_loc, fileNameMinusExtension, dfOut):
+    '''
+        Expected that the dfOut is sorted on Frame Number
+    '''
+    global COL_NAME_FRAME_NUMBER
+    global COL_NAME_DATE_TIME_EXTRACTED
+    global COL_NAME_FORMATTED_DATE
+    global COL_NAME_ELAPSED_TIME_FROM_ORIGIN
+    global COL_NAME_START_FRAME_NUMBER
+    global COL_NAME_END_FRAME_NUMBER
+    global COL_NAME_START_VIDEO_TIME
+    global COL_NAME_END_VIDEO_TIME
+    global COL_NAME_NUMBER_OF_FRAMES
+    global COL_NAME_ELAPSED_TIME
+    global DATE_FORMAT
+
+    tempDict = []
+
+    # creating a dataframe from a dictionary
+    df = pd.DataFrame(dfOut)
+
+    startFrameNumber = 0
+    startVideoTime = 0
+    
+    # iterating over rows using iterrows() function
+    currentCapturedTime = dt.datetime.min #set it to (1,1,1,0,0)
+    numberOfRows = df.shape[0]
+    # print("Number of rows = {0}".format(str(numberOfRows)))
+    for i, j in df.iterrows():
+        #print (i,j)
+        #print()
+        if (currentCapturedTime == dt.datetime.min): # first time 
+            currentCapturedTime = pd.to_datetime(j[COL_NAME_FORMATTED_DATE], format=DATE_FORMAT)
+            startFrameNumber = int(j[COL_NAME_FRAME_NUMBER])
+            startVideoTime = j[COL_NAME_ELAPSED_TIME_FROM_ORIGIN]
+        else:
+            dateFound = pd.to_datetime(j[COL_NAME_FORMATTED_DATE], format=DATE_FORMAT)
+            if ((currentCapturedTime != dateFound) or (i == (numberOfRows-1))):
+                if (i < (numberOfRows-1)):
+                    endFrameNumber = int(j[COL_NAME_FRAME_NUMBER]) -1 # one behind the current number
+                else: 
+                    endFrameNumber = int(j[COL_NAME_FRAME_NUMBER])
+    
+                numberOfFrames = int (endFrameNumber - startFrameNumber)
+
+                tempItem =	{
+                        COL_NAME_FRAME_NUMBER : j[COL_NAME_FRAME_NUMBER],
+                        COL_NAME_DATE_TIME_EXTRACTED: j[COL_NAME_DATE_TIME_EXTRACTED] ,
+                        COL_NAME_FORMATTED_DATE: j[COL_NAME_FORMATTED_DATE],
+                        COL_NAME_START_FRAME_NUMBER : (int(startFrameNumber)),
+                        COL_NAME_END_FRAME_NUMBER : endFrameNumber,
+                        COL_NAME_START_VIDEO_TIME : startVideoTime,
+                        COL_NAME_END_VIDEO_TIME : j[COL_NAME_ELAPSED_TIME_FROM_ORIGIN],
+                        COL_NAME_NUMBER_OF_FRAMES : numberOfFrames,
+                        COL_NAME_ELAPSED_TIME: getVideoElapsedTime(numberOfFrames)
+                }
+                #print (thisdict)
+                tempDict.append(tempItem)
+                # update our counters
+
+                currentCapturedTime = pd.to_datetime(j[COL_NAME_FORMATTED_DATE], format=DATE_FORMAT)
+                startFrameNumber = int(j[COL_NAME_FRAME_NUMBER])
+                startVideoTime = j[COL_NAME_ELAPSED_TIME_FROM_ORIGIN]
+
+    dfTempOut = pd.DataFrame(tempDict)
+    outputFolderPathFileName= output_loc + fileNameMinusExtension + "-Analysed.csv"
+    dfTempOut.to_csv(outputFolderPathFileName, index=False)
+    return 
 
 def video_to_frames(input_loc, output_loc, imageFileName):
     """Function to extract frames from input video file
@@ -298,6 +403,10 @@ def video_to_frames(input_loc, output_loc, imageFileName):
 
     global DATA_LIST
     global FRAMES_PER_SECOND
+    global COL_NAME_FRAME_NUMBER
+    global NO_OF_OBJ_DETECTION_API_INVOCATIONS
+    global DATE_FORMAT
+    global RECORDING_DATE_FORMAT
 
     try:
         os.mkdir(output_loc)
@@ -342,9 +451,12 @@ def video_to_frames(input_loc, output_loc, imageFileName):
     NumberOfSecondsIncrementPerSuccessfulIteration = 20 # increment X seconds per iteration. 
     numberOfFrameIncrementsPerIteration = FRAMES_PER_SECOND* NumberOfSecondsIncrementPerSuccessfulIteration
 
+    if (video_frame_length < numberOfFrameIncrementsPerIteration) :# if we have a really small file
+        numberOfFrameIncrementsPerIteration = int(video_frame_length/3)
+
     frameCount = 0
     currentCapturedTime = dt.datetime.min #set it to (1,1,1,0,0)
-    globalVideoTime = 0
+    NO_OF_OBJ_DETECTION_API_INVOCATIONS = 0
     print ("Converting video..\n")
     # Start converting the video
     while cap.isOpened():
@@ -357,8 +469,28 @@ def video_to_frames(input_loc, output_loc, imageFileName):
         # cv2.imwrite(output_loc + "/%#05d.jpg" % (frameCount+1), frame)
         # frameCount = frameCount + 1
         # If there are no more frames left
-        if (frameCount >= (video_frame_length)):
+        if (frameCount >= (video_frame_length)): # time for us to come out
         #if (frameCount > (video_frame_length-1)):
+
+            # capture the last frame
+            cap.set(cv2.CAP_PROP_POS_FRAMES, video_frame_length)
+            ret, frame = cap.read() # for the first time, we set that to the first instance. Next one will vary
+            if ret:
+                brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=frameCount)
+                if not brv:
+                    # we still need to write the last value to the file
+                    print("Adding previous known value to the end of the file")
+                    print(type(currentCapturedTime))
+                    if (isinstance(currentCapturedTime, dt.datetime)):
+                        extractdStringDateParam = currentCapturedTime.strftime(RECORDING_DATE_FORMAT)
+                        formattedDateParam = dt.datetime.strptime(extractdStringDateParam, RECORDING_DATE_FORMAT)
+                        appendToGlobalList( frameNumber=video_frame_length, 
+                                            extractedDate=extractdStringDateParam, 
+                                            formattedDate=formattedDateParam)
+                    else:
+                        print("Cannot do anything, even the last instance of captured date is corrupt")
+        
+            # now close off
             # Log the time again
             time_end = time.time()
             # Release the feed
@@ -366,16 +498,25 @@ def video_to_frames(input_loc, output_loc, imageFileName):
             # Print stats
             print ("Done extracting frames.\n%d frames extracted" % frameCount)
             print ("It took %d seconds forconversion." % (time_end-time_start))
+            print ("Numer of Object detection API calls done = %d \n" % NO_OF_OBJ_DETECTION_API_INVOCATIONS)
 
             dfOut = pd.DataFrame(DATA_LIST)
+            dfOut.sort_values([COL_NAME_FRAME_NUMBER], 
+                                axis=0,
+                                ascending=[True], 
+                                inplace=True)
+
             fileNameMinusExtension = imageFileName.partition('.')[0]
             outputFolderPathFileName= output_loc + fileNameMinusExtension + ".csv"
             dfOut.to_csv(outputFolderPathFileName, index=False)
+
+            processAExcelFileWriteOutput(output_loc, fileNameMinusExtension, dfOut)
+
             break
         else:
             # now we set the Frames to grow by the number of seconds that we want to increment
             # ???
-            currentVideoTime = cap.get(cv2.CAP_PROP_POS_MSEC)
+            # currentVideoTime = cap.get(cv2.CAP_PROP_POS_MSEC)
             # print("Current Video Time =", str(currentVideoTime))
             brv, parsedDateTime = createSubImageAndSave(frame, output_loc, imageFileName, frameNumber=frameCount)
 
@@ -387,11 +528,15 @@ def video_to_frames(input_loc, output_loc, imageFileName):
                         pass
                     else:
                         print("Date time change found!!! Need to find changeover point and start from there")
-                        findChangeOverFrameNumber(  cap, output_loc, imageFileName,
-                                                    frameCount, 
-                                                    numberOfFrameIncrementsPerIteration,
-                                                    currentCapturedTime)
-                        currentCapturedTime = parsedDateTime
+                        newFrameNumber, newDateTime = findChangeOverFrameNumber(    cap, output_loc, imageFileName,
+                                                                                    frameCount, 
+                                                                                    numberOfFrameIncrementsPerIteration,
+                                                                                    currentCapturedTime)
+                        if (int(newFrameNumber) != int(frameCount)) and (int(frameCount)> int(newFrameNumber)):
+                            frameCount = newFrameNumber
+                            currentCapturedTime = newDateTime
+                        else:
+                            currentCapturedTime = parsedDateTime
             else:
                 print("Parsing Date time returned error")
 
@@ -402,6 +547,42 @@ def video_to_frames(input_loc, output_loc, imageFileName):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frameCount-1)
             else:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frameCount)
+
+    return 
+
+def processTimeStampsandCreateShellFile(inputlocation, inputFileName, destinationLocation,  outputFileName):
+    '''
+        ffmpeg -i input.mp4 -c copy -map 0 -segment_time 00:20:00 -f segment -reset_timestamps 1 output%03d.mp4
+        ffmpeg -ss 00:00:30.0 -i input.wmv -c copy -t 00:00:10.0 output.wmv
+        # https://github.com/Zulko/moviepy/blob/master/moviepy/video/io/ffmpeg_tools.py#L27
+        ffmpeg -y -ss 0.00 -i ./2022-08-22 21-05-52.mp4 -t 120.12 -map 0 -vcodec copy -acodev copy -copyts ./output.mp4
+        print("ffmpeg -y -ss {0} -i {1} -t {2} -map 0 -vcodec copy -acodec copy -copyts {3}".format(str(start_time), inputFileName, str(duration), outputFileName)
+    '''
+
+    global COL_NAME_FORMATTED_DATE
+    global COL_NAME_START_FRAME_NUMBER
+    global COL_NAME_START_VIDEO_TIME
+    global COL_NAME_NUMBER_OF_FRAMES
+    global COL_NAME_ELAPSED_TIME
+    global FRAMES_PER_SECOND
+    MIN_NO_OF_FRAMES_REQUIRED=FRAMES_PER_SECOND*5
+
+    with open (outputFileName, 'w') as f:
+        f.write("#!/bin/sh\n")
+        df = pd.read_csv(inputlocation + inputFileName)
+        fileNameMinusExtension = inputFileName.partition('-Analysed.csv')[0]
+        inputReadFile = "\"" + destinationLocation + "/" + fileNameMinusExtension + ".mp4\""
+        for i, j in df.iterrows():
+            numberofElapsedFrames = int(int(j[COL_NAME_NUMBER_OF_FRAMES]))
+            if (numberofElapsedFrames > MIN_NO_OF_FRAMES_REQUIRED):
+                startTime = j[COL_NAME_START_VIDEO_TIME]
+                duration = j[COL_NAME_ELAPSED_TIME]
+                startingFrame = j[COL_NAME_START_FRAME_NUMBER]
+                outputFileName = "\"./" + j[COL_NAME_FORMATTED_DATE] + "-" + str(startingFrame) + "-" + str() + ".mp4\"\n"
+                fmtString = "ffmpeg -y -ss {0} -i {1} -t {2} -map 0 -vcodec copy -acodec copy -copyts {3}".format(str(startTime), inputReadFile, str(duration), outputFileName)
+                f.write(fmtString)
+    return 
+
 
 
 if __name__=="__main__":
@@ -415,10 +596,19 @@ if __name__=="__main__":
     from os.path import isfile, join
     fileNames = [f for f in listdir(inputFolder) if isfile(join(inputFolder, f))] # extract filename from a folder
 
-    numberOfIterations = 1 # controls our execution to check that code is working, then set this to a very big number
-    for i, imageFileName in enumerate(fileNames):
-        if ((numberOfIterations > 0) and (i > numberOfIterations)):
-            break; # come of of the loop
-        filename = os.path.join(inputFolder, imageFileName)
-        output_loc = './Data/Cassette1/Output/' + str(i) + '/'
-        video_to_frames(filename, output_loc, imageFileName)
+    # numberOfIterations = 100 # controls our execution to check that code is working, then set this to a very big number
+    # for i, imageFileName in enumerate(fileNames):
+    #     if ((numberOfIterations > 0) and (i > numberOfIterations)):
+    #         break; # come of of the loop
+    #     filename = os.path.join(inputFolder, imageFileName)
+    #     output_loc = './Data/Cassette1/Output/' # + str(i) + '/'
+    #     video_to_frames(filename, output_loc, imageFileName)
+
+    inputLocation = './Data/Cassette1/Output/'
+    inputFileName = '2022-08-22 22-38-15-Analysed.csv'
+    destinationLocation = './Data/Cassette1'
+    outputFileName = './2022-08-22 22-38-15-Analysed.sh'
+    processTimeStampsandCreateShellFile(    inputlocation= inputLocation,
+                                            inputFileName=inputFileName, 
+                                            destinationLocation= destinationLocation,
+                                            outputFileName=outputFileName)
