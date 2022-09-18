@@ -596,18 +596,18 @@ if __name__=="__main__":
     from os.path import isfile, join
     fileNames = [f for f in listdir(inputFolder) if isfile(join(inputFolder, f))] # extract filename from a folder
 
-    # numberOfIterations = 100 # controls our execution to check that code is working, then set this to a very big number
-    # for i, imageFileName in enumerate(fileNames):
-    #     if ((numberOfIterations > 0) and (i > numberOfIterations)):
-    #         break; # come of of the loop
-    #     filename = os.path.join(inputFolder, imageFileName)
-    #     output_loc = './Data/Cassette1/Output/' # + str(i) + '/'
-    #     video_to_frames(filename, output_loc, imageFileName)
+    numberOfIterations = 100 # controls our execution to check that code is working, then set this to a very big number
+    for i, imageFileName in enumerate(fileNames):
+        if ((numberOfIterations > 0) and (i > numberOfIterations)):
+            break; # come of of the loop
+        filename = os.path.join(inputFolder, imageFileName)
+        output_loc = './Data/Cassette1/Output/' # + str(i) + '/'
+        video_to_frames(filename, output_loc, imageFileName)
 
     inputLocation = './Data/Cassette1/Output/'
     inputFileName = '2022-08-22 22-38-15-Analysed.csv'
     destinationLocation = './Data/Cassette1'
-    outputFileName = './2022-08-22 22-38-15-Analysed.sh'
+    outputFileName = './AllConversions.sh'
     processTimeStampsandCreateShellFile(    inputlocation= inputLocation,
                                             inputFileName=inputFileName, 
                                             destinationLocation= destinationLocation,
